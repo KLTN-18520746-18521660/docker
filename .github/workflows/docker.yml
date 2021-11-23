@@ -1,0 +1,15 @@
+name: Docker environment for develop
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - users: app-env/master@v1
+    - name: Docker env for develop
+      run: |
+        docker build -t app-env:v01 . -f .\Dockerfile-develop
+    - name: Docker env for release
+      run: |
+        docker build -t app-env:v01 . -f .\Dockerfile-release
