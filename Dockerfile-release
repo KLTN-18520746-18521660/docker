@@ -1,0 +1,56 @@
+# Download base image ubuntu 20.04
+FROM ubuntu:20.04
+# Download image to run SQLServer 2019 and sql-tools
+FROM mcr.microsoft.com/mssql/server:2019-CU14-ubuntu-20.04
+FROM mcr.microsoft.com/mssql-tools
+# Download image .net core runtime for run
+FROM mcr.microsoft.com/dotnet/runtime:5.0
+
+USER root
+# Update and install necessary package
+RUN apt-get update && apt-get update -y && \
+    apt-get install -y curl && \
+    apt-get install -y gnupg && \
+    apt-get install -y wget && \
+    apt-get install nano
+
+# Install feature full text search for sql server 2019
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list | tee /etc/apt/sources.list.d/mssql-server.list
+RUN apt-get update
+RUN apt-get install -y mssql-server-fts
+
+# Install openssh-server and nginx
+RUN apt-get install openssh-server -y
+# RUN apt-get --fix-broken --allow-remove-essential -y install
+RUN apt-get install nginx -y
+
+# Install node 14, npm, angular
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
+RUN apt install nodejs -y
+RUN npm install -g @angular/cli@12
+
+# Add user and config ssh
+RUN echo "root:root" | chpasswd root
+RUN ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -P "" && cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
+
+# Install necessary pakage for running sql-server
+COPY ./config /config
+WORKDIR /config/libc6_2.31/
+RUN dpkg -i libcrypt1_4.4.18-4_amd64.deb
+RUN dpkg -i gcc-10-base_10.2.1-6_amd64.deb
+RUN dpkg -i libgcc-s1_10.2.1-6_amd64.deb
+RUN dpkg -i libc6_2.31-13+deb11u2_amd64.deb; exit 0
+
+RUN dpkg --configure -a
+RUN apt-get -f install
+
+WORKDIR /
+# Clean package
+RUN apt-get remove curl -y && \
+    apt-get remove gnupg -y && \
+    apt-get autoclean -y
+
+
+# Run Service
+CMD service ssh start && service nginx start && /opt/mssql/bin/sqlservr
