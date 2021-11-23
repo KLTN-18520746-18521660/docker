@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/env-docker@v1
+    - uses: KLTN-18520746-18521660/env-docker@v1
     - name: Docker env for develop
       run: |
         docker build -t app-env:v01 . -f Dockerfile-develop
