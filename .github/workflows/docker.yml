@@ -1,7 +1,7 @@
 name: Docker environment for develop
 
 on: 
-  [push, merge]:
+  push:
     branches: [ master ]
 
 jobs:
