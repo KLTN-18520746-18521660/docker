@@ -1,7 +1,7 @@
 # Download image to run SQLServer 2019 and sql-tools
 FROM mcr.microsoft.com/mssql/server:2019-CU14-ubuntu-20.04
 # Download image .net core sdk for develop and build
-FROM mcr.microsoft.com/dotnet/core/sdk:5.0
+FROM mcr.microsoft.com/dotnet/sdk:5.0
 # Download image .net core runtime for run
 FROM mcr.microsoft.com/dotnet/runtime:5.0
 
