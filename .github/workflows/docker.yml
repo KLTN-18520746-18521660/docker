@@ -14,6 +14,6 @@ jobs:
         docker build -t app-env:v3 . -f Dockerfile-develop
     - name: Docker push
       run: |
-        docker push app-env:v3
+        docker push eraa/app-env:v3
 
         
