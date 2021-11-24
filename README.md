@@ -12,7 +12,7 @@
 
 * Run docker
     ```
-    docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=<Thesis1234>" \
+    docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Thesis1234" \
     -p 1433:1433 -p 22:22 -p 80:80 \
     -d -t `<image-name>`
     ```

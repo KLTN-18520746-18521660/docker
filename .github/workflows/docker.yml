@@ -12,7 +12,5 @@ jobs:
     - name: Docker env for develop
       run: |
         docker build -t app-env:v01 . -f Dockerfile-develop
-    - name: Docker env for release
-      run: |
-        docker build -t app-env:v01 . -f Dockerfile-release
+
         

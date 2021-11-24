@@ -1,8 +1,5 @@
-# Download base image ubuntu 20.04
-FROM ubuntu:20.04
 # Download image to run SQLServer 2019 and sql-tools
 FROM mcr.microsoft.com/mssql/server:2019-CU14-ubuntu-20.04
-FROM mcr.microsoft.com/mssql-tools
 # Download image .net core sdk for develop and build
 FROM mcr.microsoft.com/dotnet/sdk:5.0
 # Download image .net core runtime for run
@@ -11,10 +8,10 @@ FROM mcr.microsoft.com/dotnet/runtime:5.0
 USER root
 # Update and install necessary package
 RUN apt-get update && apt-get update -y && \
-    apt-get install -y curl && \
-    apt-get install -y gnupg && \
-    apt-get install -y wget && \
-    apt-get install nano
+    apt-get install curl -y && \
+    apt-get install gnupg -y && \
+    apt-get install wget -y && \
+    apt-get install build-essential -y
 
 # Install feature full text search for sql server 2019
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
@@ -22,37 +19,85 @@ RUN curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.li
 RUN apt-get update
 RUN apt-get install -y mssql-server-fts
 
-# Install openssh-server and nginx
-RUN apt-get install openssh-server -y
-# RUN apt-get --fix-broken --allow-remove-essential -y install
+# Install nginx, node 14, npm, angular
 RUN apt-get install nginx -y
-
-# Install node 14, npm, angular
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt install nodejs -y
 RUN npm install -g @angular/cli@12
 
-# Add user and config ssh
-RUN echo "root:root" | chpasswd root
-RUN ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -P "" && cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
-
-# Install necessary pakage for running sql-server
+# Install ssh from source for running sql-server
 COPY ./config /config
+WORKDIR /config/libc6_2.31/
+
+RUN tar -xf zlib-1.2.11.tar.gz
+RUN tar -xf openssl-1.1.1l.tar.gz
+RUN tar -xf openssh-8.2p1.tar.gz
+
+WORKDIR /config/libc6_2.31/zlib-1.2.11
+RUN ./configure
+RUN make
+RUN make install 
+
+WORKDIR /config/libc6_2.31/openssl-1.1.1l
+RUN ./config 
+RUN make
+RUN make install
+
+WORKDIR /config/libc6_2.31/openssh-8.2p1
+RUN ./configure --with-ssl-dir=/usr/local/ssl/lib --with-ipv4-default --with-md5-passwords --without-openssl-header-check
+RUN make 
+RUN make install
+
 WORKDIR /config/libc6_2.31/
 RUN dpkg -i libcrypt1_4.4.18-4_amd64.deb
 RUN dpkg -i gcc-10-base_10.2.1-6_amd64.deb
 RUN dpkg -i libgcc-s1_10.2.1-6_amd64.deb
-RUN dpkg -i libc6_2.31-13+deb11u2_amd64.deb; exit 0
+RUN dpkg -i libc6_2.31-13+deb11u2_amd64.deb
+RUN dpkg -i libc-bin_2.31-13+deb11u2_amd64.deb
 
 RUN dpkg --configure -a
-RUN apt-get -f install
+RUN apt-get -f install -y
+RUN apt-get update -y
 
 WORKDIR /
+# Install mssql-tools
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | tee /etc/apt/sources.list.d/msprod.list
+RUN apt-get update -y
+RUN apt-get install mssql-tools unixodbc-dev -y | echo -e 'y\n'
+
+RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
+RUN source ~/.bashrc
+
+# Add user and config ssh
+RUN useradd remote
+RUN echo 'remote:a' | chpasswd
+RUN ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -P "" && cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
+RUN groupadd sshd
+RUN useradd -g sshd -c 'sshd privsep' -d /var/empty -s /bin/false sshd
+
+# Config nginx
+RUN mkdir -p /app/html
+RUN mv /config/nginx/html/* /app/html
+
 # Clean package
 RUN apt-get remove curl -y && \
     apt-get remove gnupg -y && \
-    apt-get autoclean -y
+    apt-get remove build-essential -y && \
+    apt-get autoclean -y && \
+    apt-get autoremove -y
 
+
+# nginx, mssql-server, ssh
+EXPOSE 80
+EXPOSE 1344
+EXPOSE 22
+
+ENV ACCEPT_EULA=Y
+ENV SA_PASSWORD=Thesis1234
 
 # Run Service
-CMD service ssh start && service nginx start && /opt/mssql/bin/sqlservr
+CMD /usr/local/sbin/sshd && \
+    nginx -c /config/nginx/nginx.conf && \
+    service nginx start && \
+    /opt/mssql/bin/sqlservr
