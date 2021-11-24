@@ -1,14 +1,16 @@
 # Download image to run SQLServer 2019 and sql-tools
 FROM mcr.microsoft.com/mssql/server:2019-CU14-ubuntu-20.04
+# Download image .net core sdk for develop and build
+FROM mcr.microsoft.com/dotnet/core/sdk:5.0
 # Download image .net core runtime for run
 FROM mcr.microsoft.com/dotnet/runtime:5.0
 
 USER root
 # Update and install necessary package
 RUN apt-get update && apt-get update -y && \
-    apt-get install -y curl && \
-    apt-get install -y gnupg && \
-    apt-get install -y wget && \
+    apt-get install curl -y && \
+    apt-get install gnupg -y && \
+    apt-get install wget -y && \
     apt-get install build-essential -y
 
 # Install feature full text search for sql server 2019
@@ -17,10 +19,43 @@ RUN curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.li
 RUN apt-get update
 RUN apt-get install -y mssql-server-fts
 
+# Install nginx, node 14, npm, angular
+RUN apt-get install nginx -y
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
+RUN apt install nodejs -y
+RUN npm install -g @angular/cli@12
+
 # Install ssh from source for running sql-server
 COPY ./config /config
-WORKDIR /config/libc6_2.31/
+# WORKDIR /config/libc6_2.31/
 
+# RUN tar -xf zlib-1.2.11.tar.gz
+# RUN tar -xf openssl-1.1.1l.tar.gz
+# RUN tar -xf openssh-8.2p1.tar.gz
+
+# WORKDIR /config/libc6_2.31/zlib-1.2.11
+# RUN ./configure
+# RUN make
+# RUN make install 
+
+# WORKDIR /config/libc6_2.31/openssl-1.1.1l
+# RUN ./config 
+# RUN make
+# RUN make install
+
+# WORKDIR /config/libc6_2.31/openssh-8.2p1
+# RUN ./configure --with-ssl-dir=/usr/local/ssl/lib --with-ipv4-default --with-md5-passwords --without-openssl-header-check
+# RUN make 
+# RUN make install
+
+# Add user and config ssh
+# RUN useradd remote
+# RUN echo 'remote:a' | chpasswd
+# RUN ssh-keygen -t rsa -f "$HOME/.ssh/id_rsa" -P "" && cat ~/.ssh/id_rsa.pub > ~/.ssh/authorized_keys
+# RUN groupadd sshd
+# RUN useradd -g sshd -c 'sshd privsep' -d /var/empty -s /bin/false sshd
+
+WORKDIR /config/libc6_2.31/
 RUN dpkg -i libcrypt1_4.4.18-4_amd64.deb
 RUN dpkg -i gcc-10-base_10.2.1-6_amd64.deb
 RUN dpkg -i libgcc-s1_10.2.1-6_amd64.deb
@@ -35,17 +70,31 @@ WORKDIR /
 
 # Config nginx
 RUN mkdir -p /app/html
+RUN mkdir -p /app/src
 RUN mv /config/nginx/html/* /app/html
 
 # Clean package
 RUN apt-get remove curl -y && \
     apt-get remove gnupg -y && \
-    apt-get autoclean -y
+    apt-get remove build-essential -y && \
+    apt-get autoclean -y && \
+    apt-get autoremove -y
+RUN rm -r /config/libc6_2.31
 
-# nginx, mssql-server, ssh
+# nginx, mssql-server, back-end
 EXPOSE 80
+EXPOSE 1433
+EXPOSE 7005
 
 ENV ACCEPT_EULA=Y
 ENV SA_PASSWORD=Thesis1234
+
 # Run Service
-CMD /usr/bin/nginx -c /config/nginx/nginx.conf && /opt/mssql/bin/sqlservr
+# CMD /usr/local/sbin/sshd && \
+#     nginx -c /config/nginx/nginx.conf && \
+#     service nginx start && \
+#     /opt/mssql/bin/sqlservr
+
+CMD nginx -c /config/nginx/nginx.conf && \
+    service nginx start && \
+    /opt/mssql/bin/sqlservr
