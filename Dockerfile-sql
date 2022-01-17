@@ -1,0 +1,52 @@
+FROM ubuntu:20.04
+
+##################################### DECLARE ENVIRONMENTS #####################################
+## For install necessary package
+ENV TZ Asia
+ENV DEBIAN_FRONTEND noninteractiveer
+## For config limit ram usage of sqlserver
+ENV MAX_RAM_USAGE_SQL 3328
+
+##################################### PRAGRAMS NEED TO BUILD #####################################
+## Password for remote root
+ARG ROOT_PASSWORD
+## Passowrd user sa of SQLServer
+# Must have 8 digit, uppercase, lowercase, number
+ARG ARG_SA_PASSWORD
+
+##################################### INSTALL DEPENDENCE PACKAGE #####################################
+USER root
+## Update and install dependence package (will be remove)
+RUN apt-get -y update && apt-get install -y curl gnupg software-properties-common && \
+    \
+##################################### INSTALL NECESSARY PACKAGE #####################################
+## Install sql server 2019/config/ubuntu/20.04/mssql-server-2019.list)"
+    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list | tee /etc/apt/sources.list.d/mssql-server.list && \
+    apt-get update -y && apt-get install -y mssql-server && \
+    echo '2' | ACCEPT_EULA=Y SA_PASSWORD=${ARG_SA_PASSWORD} /opt/mssql/bin/mssql-conf setup; exit 0 && \
+    \
+## Install feature full text search for sql server 2019r-2019.list | tee /etc/apt/sources.list.d/mssql-server.list
+    apt-get install -y mssql-server-fts && \
+    ## Install mssql-tools
+    curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | tee /etc/apt/sources.list.d/msprod.list && \
+    apt-get update -y && ACCEPT_EULA=Y apt-get install mssql-tools unixodbc-dev -y && \
+    \
+##################################### SETTINGS USER #####################################
+    echo root:${ROOT_PASSWORD} | chpasswd && \
+    \
+## Settings environment path
+    echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc && \
+    # For /bin/bash (bash)
+    source ~/.bashrc; exit 0 && \
+    # For /bin/sh (shell)
+    . ~/.bashrc; exit 0
+##################################### EXPOSE PORT #####################################
+## SQLServer port
+EXPOSE 1433/tcp
+##################################### SETTINGS ENVIRONMENT PATH #####################################
+# Set workspace
+WORKDIR /root
+##################################### RUN SERVICE #####################################
+## Change user and run service
+CMD /opt/mssql/bin/sqlservr set memory.memorylimitmb ${MAX_RAM_USAGE_SQL}
