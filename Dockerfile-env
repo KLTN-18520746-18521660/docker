@@ -29,7 +29,7 @@ RUN apt-get -y update && apt-get install -y curl gnupg build-essential software-
     curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list | tee /etc/apt/sources.list.d/mssql-server.list && \
     apt-get update -y && apt-get install -y mssql-server && \
-    echo '2' | ACCEPT_EULA=Y SA_PASSWORD=${ARG_SA_PASSWORD} /opt/mssql/bin/mssql-conf setup; exit 0 && \
+    echo '2' | ACCEPT_EULA=Y SA_PASSWORD=${ARG_SA_PASSWORD} /opt/mssql/bin/mssql-conf setup; true && \
 ## Install feature full text search for sql server 2019r-2019.list | tee /etc/apt/sources.list.d/mssql-server.list
     apt-get install -y mssql-server-fts && \
 ## Install mssql-tools
@@ -37,7 +37,7 @@ RUN apt-get -y update && apt-get install -y curl gnupg build-essential software-
     apt-get update -y && ACCEPT_EULA=Y apt-get install mssql-tools unixodbc-dev -y && \
 ## Install google-chrome (for run unit test - will remove when publish)
     curl https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o google-chrome-stable_current_amd64.deb && \
-    dpkg -i google-chrome-stable_current_amd64.deb; exit 0 && \
+    dpkg -i google-chrome-stable_current_amd64.deb; true && \
     apt-get install -f -y && \
     rm google-chrome-stable_current_amd64.deb && \
 ## Install nginx, node 14, npm, angular (for develop - will remove when publish except NGINX)
@@ -81,9 +81,9 @@ RUN apt-get -y update && apt-get install -y curl gnupg build-essential software-
     echo 'export SSL_CERT_DIR=/dev/null' >> ~/.bashrc && \
     echo 'export CHROME_BIN=/usr/bin/google-chrome-stable' >> ~/.bashrc && \
     # For /bin/bash (bash)
-    source ~/.bashrc; exit 0 && \
+    source ~/.bashrc; true && \
     # For /bin/sh (shell)
-    . ~/.bashrc; exit 0
+    . ~/.bashrc; true
 
 # Set workspace
 WORKDIR /home/${REMOTE_USER}
