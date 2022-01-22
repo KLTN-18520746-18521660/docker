@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM mcr.microsoft.com/mssql/server:2019-latest
 
 ##################################### DECLARE ENVIRONMENTS #####################################
 ## For install necessary package
@@ -17,18 +17,7 @@ ARG ARG_SA_PASSWORD
 ##################################### INSTALL DEPENDENCE PACKAGE #####################################
 USER root
 ## Update and install dependence package (will be remove)
-RUN apt-get -y update && apt-get install -y curl gnupg software-properties-common && \
-##################################### INSTALL NECESSARY PACKAGE #####################################
-## Install sql server 2019
-    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list | tee /etc/apt/sources.list.d/mssql-server.list && \
-    apt-get update -y && apt-get install -y mssql-server && \
-    echo '2' | ACCEPT_EULA=Y SA_PASSWORD=${ARG_SA_PASSWORD} /opt/mssql/bin/mssql-conf setup; true && \
-## Install feature full text search for sql server 2019
-    apt-get install -y mssql-server-fts && \
-## Install mssql-tools
-    curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list | tee /etc/apt/sources.list.d/msprod.list && \
-    apt-get update -y && ACCEPT_EULA=Y apt-get install mssql-tools unixodbc-dev -y && \
+RUN echo '2' | ACCEPT_EULA=Y SA_PASSWORD=${ARG_SA_PASSWORD} /opt/mssql/bin/mssql-conf setup; true && \
 ##################################### SETTINGS USER #####################################
     echo root:${ROOT_PASSWORD} | chpasswd && \
 ## Settings environment path
