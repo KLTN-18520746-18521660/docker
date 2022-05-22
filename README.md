@@ -1,4 +1,17 @@
-# Dockerfile for build and runtime environment
+# Dockerfile for build
+
+- Build docker:
+    ```
+    cd <source-path>
+    docker build -t eraa/env-build:v1 . -f .\dockerfile-build
+    ```
+- Run docker:
+    ```
+    docker run -it -v <source-path>:/source eraa/env-build::v1 bash
+    ```
+
+
+# Old docker document
 
 - Build docker image
     - Build for develop
